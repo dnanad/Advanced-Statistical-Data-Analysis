@@ -61,7 +61,7 @@ ggplot(data=df, alpha=0.4, aes(bins,stat(density), group=method, color=method)) 
   scale_x_continuous(breaks=0:10)+
   guides(alpha='none')+
   theme_minimal()
-
+ggsave('emp_all.png', width=4, height = 2.6)
 
 # plot three histogramm in a column
 ggplot(data=df, alpha=0.4, aes(bins,stat(density), group=method, color=method)) +
@@ -73,7 +73,7 @@ ggplot(data=df, alpha=0.4, aes(bins,stat(density), group=method, color=method)) 
   theme(strip.background = element_blank(),strip.text.x = element_blank())+
   guides(alpha='none')+
   xlab('')+ylab('empirical probability')
-
+ggsave('emp_all_col.png', width=4, height = 2.6)
 #Switch the random number generator back to its default.
 RNGkind('default')
 #Comment on the results. 
@@ -145,4 +145,4 @@ ggplot(data=local_acc_prob)+
   xlab('')+ylab('Acceptance probability')+
   theme_minimal()+
   scale_x_continuous(limits=c(-4,4))
-ggsave('acc_probs.png', width=4, height = 2.6)  
+ggsave('acc_probs.png', width=4, height = 2.6)
