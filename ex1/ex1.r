@@ -143,7 +143,7 @@ ggsave('Kenya.png')
 
 ##(d)write the tibble from (b) into a text file
 write.table(childrendata_3,"childrendata_ex9.txt")
-
+write_csv2(childrendata_3, 'children_ex9.csv')
 
 
 
