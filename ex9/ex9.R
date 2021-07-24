@@ -39,12 +39,12 @@ LocPolyReg <- function(Y, X, h, deg, method, der=deg, compute_weights=FALSE) {
   } else if (method == 'gau') {k <- Vectorize(function(x) {1/(sqrt(2*pi)*exp(x^2/2))})}
   # determine values in X
   # this is because we dont want to fit a lm for every observation but just for every different value
-  # X attains --> this saves a lot of work! Lateron we can pick the desired values for the observations
+  # X attains --> this saves a lot of work! Later on we can pick the desired values for the observations
   # (see e.g. function GCV)
   Range <- sort(unique(X))
   R <- length(Range)
   # then create matrix f_hat with the estimated coefficients/derivates
-  # and weights (which we need lateron for the GCV)
+  # and weights (which we need later on for the GCV)
   f_hat <- matrix(nrow=deg+1, ncol=R)
   colnames(f_hat) <- Range
   Weights <- NULL
