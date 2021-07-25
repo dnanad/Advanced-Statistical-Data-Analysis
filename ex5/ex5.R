@@ -129,7 +129,7 @@ p1
 p1 + 
   geom_vline(xintercept = 80, col = "red", size = 2) + 
   geom_vline(xintercept = 565, col = "blue", size = 2)
-
+ggsave('quakes_depth_dist.png')
 
 #########starting values 
 d_depth = sd(quakes$depth)
@@ -157,13 +157,13 @@ ggplot(quakes, aes(x = depth)) +
                 args = list(mix_depth$mu[2], sqrt(mix_depth$var[2]), lam = mix_depth$probs[2]),
                 colour = "blue", lwd = 1.5) +
   ylab("Density")
-
+ggsave('quakes_depth_mix.png')
 
 df_depth<-do.call(rbind, Map(data.frame, Iteration=mix_depth$it_list, Value=mix_depth$ll_list))
 
 ggplot(df_depth, aes(x=Iteration, y=Value)) + 
   geom_line()+geom_point()
-
+ggsave('quakes_depth_iter.png')
 
 
 
@@ -181,7 +181,7 @@ p2
 p2 + 
   geom_vline(xintercept = 53, col = "red", size = 2) + 
   geom_vline(xintercept = 80, col = "blue", size = 2)
-
+ggsave('faith_wait_dist.png')
 
 
 
@@ -196,14 +196,8 @@ start_values_faith = list(mu = c(m1_faith, m2_faith),
                       probs = c(.5, .5))
 
 
-#start_values_1 = list(mu = c(50, 90),
-#                  var = c(1, 115),
-#                  probs = c(.5, .5))
-#mix_erupt   = em_mixture(start_values_1, X = eruptions,  tol = 1e-8)  
-
 mix_waiting_faith = em_mixture(start_values_faith, X = waiting, tol = 1e-3, maxits = 1000)
 
-#data.frame(x = waiting) %>%
 ggplot(faithful, aes(x = waiting)) +
   geom_histogram(aes(x= waiting, ..density..), binwidth = 1, colour = "black", 
                  fill = "white") +
@@ -214,8 +208,10 @@ ggplot(faithful, aes(x = waiting)) +
                 args = list(mix_waiting_faith$mu[2], sqrt(mix_waiting_faith$var[2]), lam = mix_waiting_faith$probs[2]),
                 colour = "blue", lwd = 1.5) +
   ylab("Density")
+ggsave('faith_wait_mix.png')
 
 df_faith<-do.call(rbind, Map(data.frame, Iteration=mix_waiting_faith$it_list, Value=mix_waiting_faith$ll_list))
 
 ggplot(df_faith, aes(x=Iteration, y=Value)) + 
   geom_line()+geom_point()
+ggsave('faith_wait_iter.png')
