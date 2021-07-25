@@ -40,8 +40,9 @@ em_mixture <- function(params,X,clusters = 2,tol = .00001,maxits  = 100,showits 
   
   while ((!converged) & (it < maxits)) {
     probsOld = probs
-    muOld = mu
-    varOld = var
+    #muOld = mu
+    #varOld = var
+    llOld = ll
     riOld = ri
     
     # E
@@ -55,25 +56,38 @@ em_mixture <- function(params,X,clusters = 2,tol = .00001,maxits  = 100,showits 
     # M
     rk = colSums(ri)           # rk is the weighted average cluster membership size
     probs = rk/N
-    mu = (t(X) %*% ri) / rk    
-    var = (t(X^2) %*% ri) / rk - mu^2
+    #mu = (t(X) %*% ri) / rk    
+    #var = (t(X^2) %*% ri) / rk - mu^2
+    for (k in 1:clusters){
+      varmat = matrix(0, ncol = ncol(X), nrow = ncol(X))    # initialize to sum matrices
+      
+      for (i in 1:N){
+        varmat = varmat + ri[i,k] * X[i,]%*%t(X[i,])
+      }
+      
+      mu[k]   = (t(X) %*% ri[,k]) / rk[k]
+      var[[k]] =  varmat/rk[k] - mu[k]%*%t(mu[k])
+      
+      ll[k] = -.5*sum( ri[,k] * dnorm(X, mu[k], var[k], log = TRUE) )
+    }
     
-    # could do mu and var via log likelihood here, but this is more straightforward
+    ll = sum(ll)
     
-    parmlistold     = rbind(probsOld, muOld, varOld)
-    parmlistcurrent = rbind(probs, mu, var)
-    
+    # compare old to current for convergence
+    parmlistold =  c(llOld, probsOld)           # c(muOld, unlist(varOld), probsOld)
+    parmlistcurrent = c(ll, probs)              # c(mu, unlist(var), probs)
     it = it + 1
     
-    # if showits true, & it =1 or divisible by 5 print message
-    if (showits & it == 1 | it%%5 == 0)        
+    # if showits true, & it =1 or modulo of 5 print message
+    if (showits & it == 1 | it%%5 == 0)         
       cat(paste(format(it), "...", "\n", sep = ""))
     
-    #converged = max(abs(parmlistold - parmlistcurrent)) <= tol
+    converged = min(abs(parmlistold - parmlistcurrent)) <= tol
   }
   
-  clust = which(round(ri) == 1, arr.ind = TRUE) # create cluster membership
-  clust = clust[order(clust[, 1]), 2]           # order according to row rather than cluster
+  clust = which(round(ri) == 1, arr.ind = TRUE)        # create cluster membership
+  clust = clust[order(clust[,1]), 2]            # order accoring to row rather than cluster
+  
   
   out = list(
     probs   = probs,
@@ -98,7 +112,7 @@ em_mixture <- function(params, X, clusters = 2, tol = .00001, maxits   = 100, sh
   # maxits: maximum iterations
   # showits: whether to show iterations
   
-  require(mvtnorm)
+  #require(mvtnorm)
   # Starting points
   N     = nrow(X)
   mu    = params$mu
@@ -179,13 +193,109 @@ em_mixture <- function(params, X, clusters = 2, tol = .00001, maxits   = 100, sh
 }
 
 
+
+em_mixture <- function(params,X,clusters = 2,tol = .00001,maxits  = 100,showits = TRUE){
+  
+  # Arguments are starting parameters (means, covariances, cluster probability),
+  # data, number of clusters desired, tolerance, maximum iterations, and whether
+  # to show iterations
+  
+  # Starting points
+  N     = nrow(X)
+  nams  = names(params)
+  mu    = params$mu
+  var   = params$var
+  probs = params$probs
+  
+  # Other initializations
+  # initialize cluster 'responsibilities', i.e. probability of cluster
+  # membership for each observation i
+  ri = matrix(0, ncol = clusters, nrow = N) 
+  ll = 0                                        # log likelihood
+  it = 0
+  converged = FALSE
+  
+  if (showits)                                  # Show iterations
+    cat(paste("Iterations of EM:", "\n"))
+  
+  while ((!converged) & (it < maxits)) {
+    probsOld = probs
+    #muOld = mu
+    #varOld = var
+    llOld = ll
+    riOld = ri
+    # E
+    # Compute responsibilities
+    for (k in 1:clusters){
+      ri[, k] = probs[k] * dnorm(X, mu[k], sd = sqrt(var[k]), log = FALSE)
+    }
+    
+    ri = ri/rowSums(ri)
+    
+    
+    ### M
+    rk = colSums(ri)            # rk is weighted average cluster membership size
+    probs = rk/N
+    ######diff
+    #mu = (t(X) %*% ri) / rk    
+    #var = (t(X^2) %*% ri) / rk - mu^2
+    ################00000000000000000000000000000000000000000000000000000000000000000000000000    
+    # could do mu and var via log likelihood here, but this is more straightforward
+    
+    for (k in 1:clusters){
+      varmat = matrix(0, ncol = ncol(X), nrow = ncol(X))    # initialize to sum matrices
+      
+      for (i in 1:N){
+        varmat = varmat + ri[i,k] * X[i,]%*%t(X[i,])
+      }
+      
+      mu[k]   = (t(X) %*% ri[,k]) / rk[k]
+      var[[k]] =  varmat/rk[k] - mu[k]%*%t(mu[k])
+      
+      ll[k] = -.5*sum( ri[,k] * dnorm(X, mu[k], var[k], log = TRUE) )
+    }
+    
+    ll = sum(ll)
+    
+    # compare old to current for convergence
+    parmlistold =  c(llOld, probsOld)           # c(muOld, unlist(varOld), probsOld)
+    parmlistcurrent = c(ll, probs)              # c(mu, unlist(var), probs)
+    it = it + 1
+    
+    # if showits true, & it =1 or modulo of 5 print message
+    if (showits & it == 1 | it%%5 == 0)         
+      cat(paste(format(it), "...", "\n", sep = ""))
+    
+    converged = min(abs(parmlistold - parmlistcurrent)) <= tol
+  }
+  
+  clust = which(round(ri) == 1, arr.ind = TRUE)        # create cluster membership
+  clust = clust[order(clust[,1]), 2]            # order accoring to row rather than cluster
+  
+  
+  out = list(
+    probs   = probs,
+    mu      = mu,
+    var     = var,
+    resp    = ri,
+    cluster = clust
+  )
+  
+  out
+
+}
+
+
+
+
+
 plot_mix_comps <- function(x, mu, sigma, lam) {
   lam * dnorm(x, mu, sigma)
 }
 
 
 
-# quakes data set is in base R
+###### quakes data set is in base R######
 data(quakes)
 
 head(quakes)
@@ -238,7 +348,7 @@ ggplot(quakes, aes(x = depth)) +
 
 
 
-# faithful data set is in base R
+####### faithful data set is in base R########
 data(faithful)
 
 head(faithful)
@@ -266,29 +376,12 @@ start_values_faith = list(mu = c(m1_faith, m2_faith),
                       probs = c(.5, .5))
 
 
-mustart  = rbind(c(3, 60), c(3, 60.1))    # must be at least slightly different
-covstart = list(cov(faithful), cov(faithful))
-probs    = c(.01, .99)
-
-# params is a list of mu, var, and probs 
-starts = list(mu = mustart, var = covstart, probs = probs)  
-
-
 #start_values_1 = list(mu = c(50, 90),
 #                  var = c(1, 115),
 #                  probs = c(.5, .5))
 #mix_erupt   = em_mixture(start_values_1, X = eruptions,  tol = 1e-8)  
 
 mix_waiting_faith = em_mixture(start_values_faith, X = waiting, tol = 1e-3)
-
-mix_faithful = em_mixture(
-  params = starts,
-  X = as.matrix(faithful),
-  clusters = 2,
-  tol      = 1e-12,
-  maxits   = 1500,
-  showits  = TRUE
-)
 
 #data.frame(x = waiting) %>%
 ggplot(faithful, aes(x = waiting)) +
