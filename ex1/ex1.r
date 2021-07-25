@@ -1,3 +1,9 @@
+####      Exercise 2      #####
+
+### Preamble ####
+
+
+
 library("tidyverse")
 library("haven")
 library("maptools")
